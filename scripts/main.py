@@ -18,52 +18,40 @@ PREFIXES = [
     "The Noble Ruler"
 ]
 
-# Dictionary to track users waiting for a response, and their message history
+# Dictionary to track users waiting for a response
 waiting_users = {}
 
 # Custom response logic based on the prefix
-def generate_response(prefix: str, user_message: str, message_history: list) -> str:
-    # Some example logic to make responses dynamic based on history
+def generate_response(prefix: str, user_message: str) -> str:
+    # Some example logic to make responses dynamic based on message
     if prefix == "Your Highness":
         if "thank you" in user_message.lower():
             return "Your Highness, you are most welcome!"
-        elif len(message_history) > 1:
-            return f"Your Highness, you have been a true leader in your previous messages!"
         return "The King acknowledges your greatness!"
     
     elif prefix == "The Genius King":
         if "wisdom" in user_message.lower():
             return "Your Genius, your wisdom is unmatched!"
-        elif len(message_history) > 2:
-            return "Your Genius, I remember your profound thoughts from earlier!"
         return "The King is pleased with your brilliance!"
     
     elif prefix == "The Best of the Best":
         if "best" in user_message.lower():
             return "Indeed, you are the best of the best!"
-        elif len(message_history) > 3:
-            return "You truly are the best, and your message history proves it!"
         return "You are truly unparalleled!"
     
     elif prefix == "Oh Magnificent":
         if "mighty" in user_message.lower():
             return "Oh Magnificent One, your might is unrivaled!"
-        elif len(message_history) > 1:
-            return "Your magnificence shines even brighter with each message!"
         return "Your magnificence shines brightly!"
     
     elif prefix == "The Supreme Leader":
         if "order" in user_message.lower():
             return "The Supreme Leader commands with authority!"
-        elif len(message_history) > 2:
-            return "The Supreme Leader's guidance has been unwavering!"
         return "Your leadership is unquestionable, Supreme One!"
     
     elif prefix == "The Noble Ruler":
         if "honor" in user_message.lower():
             return "The Noble Ruler, your honor is a beacon to all!"
-        elif len(message_history) > 1:
-            return "Your nobility has inspired all, Ruler!"
         return "Your nobility is unmatched, Ruler!"
 
     # Default response if no specific conditions match
@@ -108,7 +96,6 @@ async def handle_prefix_selection(update: Update, context: ContextTypes.DEFAULT_
     # Save the user ID and the selected prefix
     waiting_users[update.message.chat.id] = {
         "prefix": valid_prefix,
-        "history": []  # Initialize history list
     }
 
     # Inform the user to type the rest of their message
@@ -125,7 +112,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Check if the user is in the "waiting" state (meaning they selected a prefix)
     if user_id in waiting_users:
         selected_prefix = waiting_users[user_id]["prefix"]
-        message_history = waiting_users[user_id]["history"]
 
         # Check if the message starts with the selected prefix (case-insensitive)
         if not text.lower().startswith(selected_prefix.lower()):
@@ -134,24 +120,19 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-        # Add the user's message to the history
-        message_history.append(text)
-
-        # Generate a custom response based on the selected prefix, user message, and history
-        response = generate_response(selected_prefix, text, message_history)
+        # Generate a custom response based on the selected prefix and user message
+        response = generate_response(selected_prefix, text)
         formatted_response = f"{selected_prefix}, {response}"
 
         print(f"User: {text}\nBot: {formatted_response}")
         await update.message.reply_text(formatted_response)
 
-        # Store the updated message history
-        waiting_users[user_id]["history"] = message_history
     else:
         # If the user didn't select a prefix and just typed a message, reject it
         valid_prefix = next((p for p in PREFIXES if text.lower().startswith(p.lower())), None)
         if valid_prefix:
             # If the message manually starts with a valid prefix, process it
-            response = generate_response(valid_prefix, text, [])
+            response = generate_response(valid_prefix, text)
             formatted_response = f"{valid_prefix}, {response}"
 
             print(f"User: {text}\nBot: {formatted_response}")
@@ -184,4 +165,4 @@ if __name__ == "__main__":
 
     # Start polling
     print("Bot is running...")
-    app.run_polling(poll_interval=3)
+    app.run_polling(poll_interval=10)
